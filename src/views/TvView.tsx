@@ -29,13 +29,11 @@ export default function TvView() {
         !loading && <EmptyStage status={status} />
       )}
 
-      {status === 'VOTING_OPEN' && <VotingBanner lockTime={config.votingLockTime} now={now} />}
+      {status === 'VOTING_OPEN' && <VotingBanner />}
       {status === 'SUBMISSIONS_OPEN' && config.votingUnlockTime && (
-        <div className="absolute top-6 left-6 z-30 flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-sm font-semibold text-violet-100 backdrop-blur-md">
-          <Timer className="size-4 text-orange-400" />
-          Voting opens in <span className="font-display tabular-nums text-orange-300">{formatCountdown(config.votingUnlockTime - now)}</span>
-        </div>
+        <Countdown kind="opens" msLeft={config.votingUnlockTime - now} />
       )}
+      {status === 'VOTING_OPEN' && config.votingLockTime && <Countdown kind="closes" msLeft={config.votingLockTime - now} />}
       {status !== 'VOTING_CLOSED' && costumes.length > 0 && <QrCorner status={status} />}
       <FullscreenButton hidden={idle} />
     </div>
@@ -140,7 +138,7 @@ function Slide({ costume, total, animate, isFresh }: { costume: Costume; total: 
         <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-r from-transparent to-slate-950" />
       </div>
 
-      <div className="relative flex w-[38%] flex-col justify-center bg-slate-950 pr-[4rem] pb-[11rem] pl-[2.5rem]">
+      <div className="relative flex w-[38%] flex-col justify-center bg-slate-950 pr-[4rem] pt-[12rem] pb-[11rem] pl-[2.5rem]">
         <div aria-hidden="true" className="absolute -top-20 right-0 size-[22rem] rounded-full bg-violet-700/25 blur-3xl" />
         <div aria-hidden="true" className="absolute bottom-0 -left-10 size-[18rem] rounded-full bg-orange-600/15 blur-3xl" />
 
@@ -202,22 +200,64 @@ function QrCorner({ status }: { status: ContestStatus }) {
   );
 }
 
-function VotingBanner({ lockTime, now }: { lockTime: number | null; now: number }) {
+function VotingBanner() {
   return (
-    <div className="absolute inset-x-0 top-[2rem] z-30 flex justify-center px-8">
+    <div className="absolute top-[2rem] left-[2.5rem] z-30 flex">
       <div className="flex animate-banner-glow items-center gap-5 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 py-3 pr-8 pl-3 text-slate-950">
         <span className="grid size-12 place-items-center rounded-full bg-slate-950 text-orange-400">
           <Vote className="size-6" />
         </span>
         <span className="font-display text-[1.9rem] font-extrabold tracking-tight">VOTING IS NOW OPEN!</span>
         <span className="text-xl font-semibold">Scan the QR code to pick your top 3.</span>
-        {lockTime && (
-          <span className="ml-2 rounded-full bg-slate-950/90 px-4 py-1.5 font-display text-lg font-bold text-orange-300 tabular-nums">
-            {formatCountdown(lockTime - now)} left
-          </span>
-        )}
       </div>
     </div>
+  );
+}
+
+const COUNTDOWN_COPY = {
+  opens: { label: 'Voting opens in', urgent: 'Last call for entries!' },
+  closes: { label: 'Voting closes in', urgent: 'Last chance to vote!' },
+} as const;
+
+/**
+ * Big corner clock for the scheduled unlock/lock. Turns red and pulses in the final minute,
+ * and takes over the middle of the screen for the last 10 seconds.
+ */
+function Countdown({ kind, msLeft }: { kind: keyof typeof COUNTDOWN_COPY; msLeft: number }) {
+  const secondsLeft = Math.max(0, Math.ceil(msLeft / 1000));
+  const urgent = secondsLeft <= 60;
+  const copy = COUNTDOWN_COPY[kind];
+
+  return (
+    <>
+      <div
+        className={`absolute top-[2rem] right-[2.5rem] z-30 rounded-3xl border px-7 py-4 shadow-2xl backdrop-blur-md transition-colors duration-700 ${
+          urgent ? 'origin-top-right animate-urgent-pulse border-red-400/70 bg-red-950/85 shadow-red-900/60' : 'border-orange-400/40 bg-slate-950/85 shadow-black/50'
+        }`}
+      >
+        <div className={`flex items-center gap-2 text-lg font-bold tracking-[0.2em] uppercase ${urgent ? 'text-red-200' : 'text-orange-300'}`}>
+          <Timer className="size-5" />
+          {urgent ? copy.urgent : copy.label}
+        </div>
+        <div className={`font-display text-[6rem] leading-none font-extrabold tracking-tight tabular-nums ${urgent ? 'text-white' : 'text-orange-50'}`}>
+          {formatCountdown(msLeft)}
+        </div>
+      </div>
+
+      {secondsLeft > 0 && secondsLeft <= 10 && (
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-black/45">
+          <div className="text-center">
+            <div className="font-display text-[2.5rem] font-extrabold tracking-tight text-white drop-shadow-lg">{copy.label}</div>
+            <div
+              key={secondsLeft}
+              className="animate-tick font-display text-[22rem] leading-none font-extrabold text-orange-400 tabular-nums drop-shadow-[0_0_60px_rgb(249_115_22/0.6)]"
+            >
+              {secondsLeft}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -327,7 +367,7 @@ function FullscreenButton({ hidden }: { hidden: boolean }) {
     <button
       type="button"
       onClick={toggle}
-      className={`absolute top-6 right-6 z-40 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition-opacity duration-500 hover:bg-black/80 ${hidden ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+      className={`absolute bottom-6 left-6 z-40 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition-opacity duration-500 hover:bg-black/80 ${hidden ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
     >
       {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
       {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}

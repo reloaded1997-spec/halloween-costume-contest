@@ -11,6 +11,8 @@
   --animate-banner-glow: banner-glow 2.4s ease-in-out infinite;
   --animate-reveal: reveal 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-urgent-pulse: urgent-pulse 1s ease-in-out infinite;
+  --animate-tick: tick 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -35,6 +37,16 @@
   @keyframes reveal {
     0% { opacity: 0; transform: perspective(900px) rotateY(-90deg) scale(0.9); }
     100% { opacity: 1; transform: perspective(900px) rotateY(0) scale(1); }
+  }
+  @keyframes urgent-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(248 113 113 / 0); }
+    50% { transform: scale(1.04); box-shadow: 0 0 0 10px rgb(248 113 113 / 0.25); }
+  }
+  @keyframes tick {
+    0% { opacity: 0; transform: scale(1.6); }
+    25% { opacity: 1; transform: scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 1; transform: scale(0.95); }
   }
   @keyframes float {
     0%, 100% { transform: translateY(0); }
