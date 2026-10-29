@@ -137,3 +137,4 @@ src/
   components/admin/           PinGate, StageController, Leaderboard, Ceremony, EntryModeration
 firestore.rules, storage.rules, firebase.json
 ```
+# halloween-costume-contest
