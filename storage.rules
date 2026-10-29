@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /costumes/{fileName} {
+      allow read: if true;
+      // Guests upload compressed JPEGs (usually < 1 MB); anything over 10 MB or not an image is refused.
+      allow create: if fileName.matches('[A-Za-z0-9_-]{8,64}[.]jpg')
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow update: if false;
+      allow delete: if request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,109 @@
+rules_version = '2';
+
+// Guests are never signed in: they can read entries, submit a costume, and cast one ballot.
+// The host signs in anonymously and becomes an admin by creating admins/{uid} with the right PIN.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function hasConfig() {
+      return exists(/databases/$(database)/documents/config/contest);
+    }
+
+    function cfg() {
+      return get(/databases/$(database)/documents/config/contest).data;
+    }
+
+    // Mirrors effectiveStatus() in src/lib/contest.ts, so scheduled unlock/lock times are enforced
+    // server-side even if no host tab is open when they pass.
+    function unlocked(c) {
+      return c.status == 'VOTING_OPEN'
+        || (c.status == 'SUBMISSIONS_OPEN'
+            && c.get('votingUnlockTime', null) != null
+            && request.time.toMillis() >= c.votingUnlockTime);
+    }
+
+    function notLocked(c) {
+      return c.get('votingLockTime', null) == null || request.time.toMillis() < c.votingLockTime;
+    }
+
+    function submissionsOpen() {
+      return !hasConfig() || (cfg().status == 'SUBMISSIONS_OPEN' && !unlocked(cfg()));
+    }
+
+    function votingOpen() {
+      return hasConfig() && unlocked(cfg()) && notLocked(cfg());
+    }
+
+    function text(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function costumeExists(id) {
+      return id is string && exists(/databases/$(database)/documents/costumes/$(id));
+    }
+
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /costumes/{costumeId} {
+      allow read: if true;
+      allow create: if submissionsOpen()
+        && request.resource.data.keys().hasOnly(['contestantName', 'costumeTitle', 'description', 'photoUrl', 'photoPath', 'createdAt'])
+        && request.resource.data.keys().hasAll(['contestantName', 'costumeTitle', 'description', 'photoUrl', 'photoPath', 'createdAt'])
+        && text(request.resource.data.contestantName, 1, 60)
+        && text(request.resource.data.costumeTitle, 1, 80)
+        && text(request.resource.data.description, 0, 280)
+        && text(request.resource.data.photoUrl, 1, 2048)
+        && (request.resource.data.photoUrl.matches('https://firebasestorage[.]googleapis[.]com/.*')
+            // Storage emulator URLs, for local rehearsal with `npm run emulators`.
+            || request.resource.data.photoUrl.matches('http://[A-Za-z0-9.-]+:9199/.*'))
+        && request.resource.data.photoPath == 'costumes/' + costumeId + '.jpg'
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /votes/{voterId} {
+      allow read: if isAdmin();
+      // create-only: a ballot can't be changed or overwritten once cast.
+      allow create: if votingOpen()
+        && request.resource.data.keys().hasOnly(['voterId', 'firstPlaceId', 'secondPlaceId', 'thirdPlaceId', 'createdAt'])
+        && request.resource.data.keys().hasAll(['voterId', 'firstPlaceId', 'secondPlaceId', 'thirdPlaceId', 'createdAt'])
+        && request.resource.data.voterId == voterId
+        && voterId.size() <= 64
+        && costumeExists(request.resource.data.firstPlaceId)
+        && (request.resource.data.secondPlaceId == null
+            || (request.resource.data.secondPlaceId != request.resource.data.firstPlaceId
+                && costumeExists(request.resource.data.secondPlaceId)))
+        && (request.resource.data.thirdPlaceId == null
+            || (request.resource.data.secondPlaceId != null
+                && request.resource.data.thirdPlaceId != request.resource.data.firstPlaceId
+                && request.resource.data.thirdPlaceId != request.resource.data.secondPlaceId
+                && costumeExists(request.resource.data.thirdPlaceId)))
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['pin', 'createdAt'])
+        && request.resource.data.pin == get(/databases/$(database)/documents/adminConfig/secret).data.pin;
+      allow update, delete: if false;
+    }
+
+    // Holds { pin: "1031" }. Set it in the Firebase console; no client can read or write it.
+    match /adminConfig/{docId} {
+      allow read, write: if false;
+    }
+  }
+}
