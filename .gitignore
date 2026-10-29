@@ -9,3 +9,4 @@ dist
 firestore-debug.log
 *-debug.log
 *.tsbuildinfo
+.claude/
