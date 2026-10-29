@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Maximize, Minimize, Sparkles, Timer, Vote } from 'lucide-react';
+import { Maximize, Megaphone, Minimize, Sparkles, Timer, Vote } from 'lucide-react';
 import { useContestConfig, useCostumes, useNow } from '../lib/hooks';
 import { effectiveStatus, formatCountdown, PLACE_META } from '../lib/contest';
 import { PumpkinMark } from '../components/ui';
@@ -26,7 +26,7 @@ export default function TvView() {
       ) : costumes.length > 0 ? (
         <Slideshow costumes={costumes} loading={loading} />
       ) : (
-        !loading && <EmptyStage status={status} />
+        !loading && <EmptyStage status={status} announcement={config.announcement} />
       )}
 
       {status === 'VOTING_OPEN' && <VotingBanner />}
@@ -34,6 +34,10 @@ export default function TvView() {
         <Countdown kind="opens" msLeft={config.votingUnlockTime - now} />
       )}
       {status === 'VOTING_OPEN' && config.votingLockTime && <Countdown kind="closes" msLeft={config.votingLockTime - now} />}
+      {/* Lower third over the photo, so it never fights the entry text or the QR code. */}
+      {status !== 'VOTING_CLOSED' && costumes.length > 0 && config.announcement && (
+        <AnnouncementCard text={config.announcement} overlay className="absolute bottom-[2.5rem] left-[2.5rem] z-30 max-w-[54%]" />
+      )}
       {status !== 'VOTING_CLOSED' && costumes.length > 0 && <QrCorner status={status} />}
       <FullscreenButton hidden={idle} />
     </div>
@@ -261,7 +265,21 @@ function Countdown({ kind, msLeft }: { kind: keyof typeof COUNTDOWN_COPY; msLeft
   );
 }
 
-function EmptyStage({ status }: { status: ContestStatus }) {
+function AnnouncementCard({ text, overlay, className = '' }: { text: string; overlay?: boolean; className?: string }) {
+  return (
+    <div
+      key={text}
+      className={`animate-rise rounded-2xl border border-violet-400/50 px-6 py-4 ${overlay ? 'bg-slate-950/85 shadow-2xl shadow-black/60 backdrop-blur-md' : 'bg-violet-500/15'} ${className}`}
+    >
+      <div className="flex items-center gap-2 text-sm font-bold tracking-[0.25em] text-violet-200 uppercase">
+        <Megaphone className="size-4" /> From the host
+      </div>
+      <p className="mt-1.5 line-clamp-3 text-[1.6rem] leading-snug font-semibold break-words text-white">{text}</p>
+    </div>
+  );
+}
+
+function EmptyStage({ status, announcement }: { status: ContestStatus; announcement: string }) {
   const voting = status === 'VOTING_OPEN';
   return (
     <div className="absolute inset-0 grid place-items-center bg-slate-950">
@@ -280,6 +298,7 @@ function EmptyStage({ status }: { status: ContestStatus }) {
           <p className="max-w-[28rem] text-[1.6rem] leading-snug text-slate-300">
             {voting ? 'Voting is open — but no entries yet.' : 'Be the first on the big screen. Scan to enter your costume.'}
           </p>
+          {announcement && <AnnouncementCard text={announcement} className="max-w-[32rem]" />}
         </div>
         <div className="rounded-3xl bg-white p-6 shadow-2xl shadow-orange-900/40">
           <QRCodeSVG value={GUEST_URL} size={256} level="M" marginSize={0} className="size-[18rem]" />
@@ -367,7 +386,7 @@ function FullscreenButton({ hidden }: { hidden: boolean }) {
     <button
       type="button"
       onClick={toggle}
-      className={`absolute bottom-6 left-6 z-40 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition-opacity duration-500 hover:bg-black/80 ${hidden ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+      className={`absolute right-[2.5rem] bottom-[12.5rem] z-40 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition-opacity duration-500 hover:bg-black/80 ${hidden ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
     >
       {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
       {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}

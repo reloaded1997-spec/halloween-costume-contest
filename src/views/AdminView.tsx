@@ -9,6 +9,7 @@ import StageController from '../components/admin/StageController';
 import Leaderboard from '../components/admin/Leaderboard';
 import Ceremony from '../components/admin/Ceremony';
 import EntryModeration from '../components/admin/EntryModeration';
+import AnnouncementEditor from '../components/admin/AnnouncementEditor';
 
 type Session = { state: 'loading' } | { state: 'locked'; uid: string } | { state: 'admin' } | { state: 'error'; message: string };
 
@@ -101,7 +102,12 @@ function Dashboard() {
           <Stat label="Points cast" value={standings.reduce((sum, s) => sum + s.points, 0)} />
         </div>
 
-        {tab === 'stage' && <StageController config={config} status={status} now={now} />}
+        {tab === 'stage' && (
+          <div className="space-y-4">
+            <StageController config={config} status={status} now={now} />
+            <AnnouncementEditor announcement={config.announcement} />
+          </div>
+        )}
         {tab === 'results' && <Leaderboard standings={standings} votes={votes} />}
         {tab === 'reveal' && <Ceremony standings={standings} config={config} status={status} voteCount={votes.length} />}
         {tab === 'entries' && <EntryModeration costumes={costumes} standings={standings} votes={votes} />}

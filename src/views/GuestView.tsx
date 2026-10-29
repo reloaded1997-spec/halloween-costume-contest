@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Megaphone } from 'lucide-react';
 import { useContestConfig, useCostumes, useNow } from '../lib/hooks';
 import { effectiveStatus } from '../lib/contest';
 import { getSavedVote } from '../lib/local';
@@ -31,6 +32,16 @@ export default function GuestView() {
         {error && (
           <div className="mb-4">
             <Notice>Can't reach the contest right now. Check your connection — this page will reconnect on its own.</Notice>
+          </div>
+        )}
+
+        {config.announcement && (
+          <div key={config.announcement} role="status" className="mb-5 flex animate-rise gap-3 rounded-2xl border border-violet-400/40 bg-violet-500/15 px-4 py-3">
+            <Megaphone className="mt-0.5 size-5 shrink-0 text-violet-300" />
+            <div className="min-w-0">
+              <div className="text-xs font-bold tracking-[0.2em] text-violet-300 uppercase">From the host</div>
+              <p className="text-sm font-medium break-words text-white">{config.announcement}</p>
+            </div>
           </div>
         )}
 

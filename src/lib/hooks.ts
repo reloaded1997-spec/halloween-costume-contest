@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { DEFAULT_CONFIG } from './contest';
+import { ANNOUNCEMENT_MAX, DEFAULT_CONFIG } from './contest';
 import type { ContestConfig, ContestStatus, Costume, Vote } from '../types';
 
 const STATUSES: ContestStatus[] = ['SUBMISSIONS_OPEN', 'VOTING_OPEN', 'VOTING_CLOSED'];
@@ -30,6 +30,7 @@ export function useContestConfig() {
             votingUnlockTime: numOrNull(data.votingUnlockTime),
             votingLockTime: numOrNull(data.votingLockTime),
             reveal: typeof data.reveal === 'object' && data.reveal ? data.reveal : {},
+            announcement: typeof data.announcement === 'string' ? data.announcement.trim().slice(0, ANNOUNCEMENT_MAX) : '',
           });
           setLoading(false);
           setError(null);

@@ -11,6 +11,8 @@ export interface ContestConfig {
   votingLockTime: number | null;
   /** Costume ids the host has revealed during the ceremony. */
   reveal: Partial<Record<Place, string>>;
+  /** Message from the host, shown on the TV slides and guests' phones. Empty when there is none. */
+  announcement: string;
 }
 
 /** Firestore: costumes/{id} */

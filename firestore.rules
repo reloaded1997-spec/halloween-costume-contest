@@ -49,7 +49,8 @@ service cloud.firestore {
 
     match /config/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && (!('announcement' in request.resource.data) || text(request.resource.data.announcement, 0, 200));
     }
 
     match /costumes/{costumeId} {

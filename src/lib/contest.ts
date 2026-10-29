@@ -5,7 +5,10 @@ export const DEFAULT_CONFIG: ContestConfig = {
   votingUnlockTime: null,
   votingLockTime: null,
   reveal: {},
+  announcement: '',
 };
+
+export const ANNOUNCEMENT_MAX = 200;
 
 export const PLACES: readonly Place[] = ['first', 'second', 'third'];
 
