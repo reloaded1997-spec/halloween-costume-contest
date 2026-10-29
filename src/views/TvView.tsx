@@ -48,6 +48,8 @@ function Slideshow({ costumes, loading }: { costumes: Costume[]; loading: boolea
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [previousId, setPreviousId] = useState<string | null>(null);
   const [currentIsFresh, setCurrentIsFresh] = useState(false);
+  // Bumped when a tick finds nothing new to show, so the timer re-arms instead of stopping for good.
+  const [idleTicks, setIdleTicks] = useState(0);
   const known = useRef<Set<string> | null>(null);
   const queue = useRef<string[]>([]);
   const fresh = useRef<Set<string>>(new Set());
@@ -73,7 +75,7 @@ function Slideshow({ costumes, loading }: { costumes: Costume[]; loading: boolea
 
   const advance = useCallback(() => {
     const ids = costumes.map((c) => c.id);
-    if (ids.length === 0) return;
+    if (ids.length === 0) return setIdleTicks((n) => n + 1);
     let next: string | undefined;
     while (queue.current.length && !next) {
       const candidate = queue.current.shift()!;
@@ -83,7 +85,7 @@ function Slideshow({ costumes, loading }: { costumes: Costume[]; loading: boolea
       next = ids[(ids.indexOf(rotation.current ?? currentId ?? '') + 1) % ids.length];
       rotation.current = next;
     }
-    if (next === currentId) return;
+    if (next === currentId) return setIdleTicks((n) => n + 1);
     setPreviousId(currentId);
     setCurrentId(next);
     setCurrentIsFresh(fresh.current.delete(next));
@@ -108,7 +110,7 @@ function Slideshow({ costumes, loading }: { costumes: Costume[]; loading: boolea
       clearTimeout(timer);
       clearTimeout(clearPrev);
     };
-  }, [currentId]);
+  }, [currentId, idleTicks]);
 
   // Warm the cache for the upcoming photo so the cross-fade never shows a half-loaded image.
   useEffect(() => {
