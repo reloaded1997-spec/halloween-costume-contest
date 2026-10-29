@@ -9,6 +9,7 @@ import type { Costume } from '../../types';
 
 interface Photo {
   blob: Blob;
+  small: Blob;
   url: string;
   originalBytes: number;
 }
@@ -49,8 +50,8 @@ export default function SubmissionForm({
     }
     setProcessing(true);
     try {
-      const { blob } = await compressImage(file);
-      setPhoto({ blob, url: URL.createObjectURL(blob), originalBytes: file.size });
+      const { blob, small } = await compressImage(file);
+      setPhoto({ blob, small, url: URL.createObjectURL(blob), originalBytes: file.size });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't read that photo.");
     } finally {
@@ -66,7 +67,7 @@ export default function SubmissionForm({
     setPhase({ kind: 'sending', step: 'upload', progress: 0 });
     try {
       const id = await submitCostume(
-        { contestantName, costumeTitle, description, photo: photo.blob },
+        { contestantName, costumeTitle, description, photo: photo.blob, smallPhoto: photo.small },
         (progress) => setPhase({ kind: 'sending', step: progress >= 1 ? 'save' : 'upload', progress }),
       );
       addMyEntry(id);

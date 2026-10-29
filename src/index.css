@@ -58,6 +58,15 @@
   color-scheme: dark;
 }
 
+/* TV lite mode (host toggle): drop the GPU-heavy blur layers and zoom for slow TV browsers. */
+.tv-lite .tv-fx {
+  display: none;
+}
+.tv-lite,
+.tv-lite * {
+  backdrop-filter: none !important;
+}
+
 html,
 body {
   background: var(--color-slate-950);

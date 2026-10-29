@@ -42,8 +42,9 @@ export function resetReveal() {
 
 export async function deleteCostume(costume: Costume) {
   await deleteDoc(doc(db, 'costumes', costume.id));
-  if (costume.photoPath) {
-    await deleteObject(ref(storage, costume.photoPath)).catch(() => {
+  for (const path of [costume.photoPath, costume.thumbPath]) {
+    if (!path) continue;
+    await deleteObject(ref(storage, path)).catch(() => {
       // Already gone or never finished uploading; the entry itself is removed either way.
     });
   }

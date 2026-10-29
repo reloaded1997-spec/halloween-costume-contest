@@ -6,7 +6,11 @@ export const DEFAULT_CONFIG: ContestConfig = {
   votingLockTime: null,
   reveal: {},
   announcement: '',
+  tvMode: 'full',
 };
+
+/** The small copy when there is one (older entries only have the full photo). */
+export const smallPhoto = (c: Costume) => c.thumbUrl || c.photoUrl;
 
 export const ANNOUNCEMENT_MAX = 200;
 

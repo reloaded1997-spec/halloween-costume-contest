@@ -73,9 +73,9 @@ After deploying, your app is at `https://<project-id>.web.app`.
 
 | Path               | Fields                                                                                              |
 | ------------------ | --------------------------------------------------------------------------------------------------- |
-| `costumes/{id}`    | `contestantName`, `costumeTitle`, `description`, `photoUrl`, `photoPath`, `createdAt`               |
+| `costumes/{id}`    | `contestantName`, `costumeTitle`, `description`, `photoUrl`, `photoPath`, `thumbUrl`, `thumbPath` (960×540 copy), `createdAt` |
 | `votes/{voterId}`  | `voterId`, `firstPlaceId`, `secondPlaceId`, `thirdPlaceId`, `createdAt`                             |
-| `config/contest`   | `status` (`SUBMISSIONS_OPEN` \| `VOTING_OPEN` \| `VOTING_CLOSED`), `votingUnlockTime`, `votingLockTime`, `reveal`, `announcement` |
+| `config/contest`   | `status` (`SUBMISSIONS_OPEN` \| `VOTING_OPEN` \| `VOTING_CLOSED`), `votingUnlockTime`, `votingLockTime`, `reveal`, `announcement`, `tvMode` (`full` \| `lite`) |
 | `admins/{uid}`     | Created when the host enters the correct PIN                                                        |
 | `adminConfig/secret` | `{ pin }`, unreadable by clients                                                                  |
 
@@ -99,7 +99,7 @@ Entry numbers are each costume's position in submission order. Deleting an entry
 
 ### Image pipeline
 
-Photos are decoded with `createImageBitmap` (respects EXIF rotation), drawn to a canvas that fits within 1920×1080 (or 1080×1920 for portrait shots), and re-encoded as JPEG at 0.8 quality before upload. A typical 4–6 MB phone photo uploads as ~300 KB.
+Photos are decoded with `createImageBitmap` (respects EXIF rotation), drawn to a canvas that fits within 1920×1080 (or 1080×1920 for portrait shots), and re-encoded as JPEG at 0.8 quality before upload. A typical 4–6 MB phone photo uploads as ~300 KB. A second 960×540 copy (~60–120 KB) is uploaded alongside it; the TV uses it in Lite mode (Admin → Stage → TV display), which also turns off the zoom and blur effects for slow TV browsers.
 
 ### Scoring
 

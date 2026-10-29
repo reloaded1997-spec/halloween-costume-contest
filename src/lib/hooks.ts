@@ -31,6 +31,7 @@ export function useContestConfig() {
             votingLockTime: numOrNull(data.votingLockTime),
             reveal: typeof data.reveal === 'object' && data.reveal ? data.reveal : {},
             announcement: typeof data.announcement === 'string' ? data.announcement.trim().slice(0, ANNOUNCEMENT_MAX) : '',
+            tvMode: data.tvMode === 'lite' ? 'lite' : 'full',
           });
           setLoading(false);
           setError(null);
@@ -67,6 +68,8 @@ export function useCostumes() {
                 description: String(data.description ?? ''),
                 photoUrl: String(data.photoUrl ?? ''),
                 photoPath: String(data.photoPath ?? ''),
+                thumbUrl: String(data.thumbUrl ?? ''),
+                thumbPath: String(data.thumbPath ?? ''),
                 createdAt: toMillis(data.createdAt),
               };
             }),

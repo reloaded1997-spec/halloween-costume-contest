@@ -13,7 +13,11 @@ export interface ContestConfig {
   reveal: Partial<Record<Place, string>>;
   /** Message from the host, shown on the TV slides and guests' phones. Empty when there is none. */
   announcement: string;
+  /** 'lite' drops the TV's zoom/blur effects and shows the small photo copies, for slow TV browsers. */
+  tvMode: TvMode;
 }
+
+export type TvMode = 'full' | 'lite';
 
 /** Firestore: costumes/{id} */
 export interface Costume {
@@ -25,6 +29,9 @@ export interface Costume {
   description: string;
   photoUrl: string;
   photoPath: string;
+  /** ~960×540 copy; empty for entries uploaded before small copies existed. */
+  thumbUrl: string;
+  thumbPath: string;
   createdAt: number;
 }
 

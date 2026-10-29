@@ -8,30 +8,43 @@ export interface CostumeSubmission {
   costumeTitle: string;
   description: string;
   photo: Blob;
+  /** Small copy for the TV's lite mode and thumbnails. */
+  smallPhoto: Blob;
 }
 
-/** Uploads the (already compressed) photo, then creates the costume doc. Resolves with the new entry's id. */
+/** Uploads the (already compressed) photos, then creates the costume doc. Resolves with the new entry's id. */
 export async function submitCostume(
   entry: CostumeSubmission,
   onUploadProgress: (fraction: number) => void,
 ): Promise<string> {
   const id = newId();
   const photoPath = `costumes/${id}.jpg`;
+  const thumbPath = `costumes/${id}_small.jpg`;
 
-  const task = uploadBytesResumable(ref(storage, photoPath), entry.photo, {
-    contentType: 'image/jpeg',
-    cacheControl: 'public, max-age=31536000, immutable',
-  });
-  task.on('state_changed', (snap) => onUploadProgress(snap.totalBytes ? snap.bytesTransferred / snap.totalBytes : 0));
-  await task;
+  // Both files upload together; progress is reported over their combined size.
+  const totalBytes = entry.photo.size + entry.smallPhoto.size;
+  const sent = new Map<string, number>();
+  const upload = (path: string, blob: Blob) => {
+    const task = uploadBytesResumable(ref(storage, path), blob, {
+      contentType: 'image/jpeg',
+      cacheControl: 'public, max-age=31536000, immutable',
+    });
+    task.on('state_changed', (snap) => {
+      sent.set(path, snap.bytesTransferred);
+      onUploadProgress(totalBytes ? Math.min(1, [...sent.values()].reduce((a, b) => a + b, 0) / totalBytes) : 0);
+    });
+    return task.then((snap) => getDownloadURL(snap.ref));
+  };
+  const [photoUrl, thumbUrl] = await Promise.all([upload(photoPath, entry.photo), upload(thumbPath, entry.smallPhoto)]);
 
-  const photoUrl = await getDownloadURL(task.snapshot.ref);
   await setDoc(doc(db, 'costumes', id), {
     contestantName: entry.contestantName.trim(),
     costumeTitle: entry.costumeTitle.trim(),
     description: entry.description.trim(),
     photoUrl,
     photoPath,
+    thumbUrl,
+    thumbPath,
     createdAt: serverTimestamp(),
   });
   return id;

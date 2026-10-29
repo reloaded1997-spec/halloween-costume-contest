@@ -43,6 +43,13 @@ service cloud.firestore {
       return v is string && v.size() >= min && v.size() <= max;
     }
 
+    function storageUrl(v) {
+      return text(v, 1, 2048)
+        && (v.matches('https://firebasestorage[.]googleapis[.]com/.*')
+            // Storage emulator URLs, for local rehearsal with `npm run emulators`.
+            || v.matches('http://[A-Za-z0-9.-]+:9199/.*'));
+    }
+
     function costumeExists(id) {
       return id is string && exists(/databases/$(database)/documents/costumes/$(id));
     }
@@ -50,22 +57,24 @@ service cloud.firestore {
     match /config/{docId} {
       allow read: if true;
       allow write: if isAdmin()
-        && (!('announcement' in request.resource.data) || text(request.resource.data.announcement, 0, 200));
+        && (!('announcement' in request.resource.data) || text(request.resource.data.announcement, 0, 200))
+        && (!('tvMode' in request.resource.data) || request.resource.data.tvMode in ['full', 'lite']);
     }
 
     match /costumes/{costumeId} {
       allow read: if true;
       allow create: if submissionsOpen()
-        && request.resource.data.keys().hasOnly(['contestantName', 'costumeTitle', 'description', 'photoUrl', 'photoPath', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['contestantName', 'costumeTitle', 'description', 'photoUrl', 'photoPath', 'thumbUrl', 'thumbPath', 'createdAt'])
         && request.resource.data.keys().hasAll(['contestantName', 'costumeTitle', 'description', 'photoUrl', 'photoPath', 'createdAt'])
         && text(request.resource.data.contestantName, 1, 60)
         && text(request.resource.data.costumeTitle, 1, 80)
         && text(request.resource.data.description, 0, 280)
-        && text(request.resource.data.photoUrl, 1, 2048)
-        && (request.resource.data.photoUrl.matches('https://firebasestorage[.]googleapis[.]com/.*')
-            // Storage emulator URLs, for local rehearsal with `npm run emulators`.
-            || request.resource.data.photoUrl.matches('http://[A-Za-z0-9.-]+:9199/.*'))
+        && storageUrl(request.resource.data.photoUrl)
         && request.resource.data.photoPath == 'costumes/' + costumeId + '.jpg'
+        // Optional small copy for the TV's lite mode; both fields or neither.
+        && (request.resource.data.keys().hasAny(['thumbUrl', 'thumbPath']) == false
+            || (storageUrl(request.resource.data.get('thumbUrl', null))
+                && request.resource.data.get('thumbPath', null) == 'costumes/' + costumeId + '_small.jpg'))
         && request.resource.data.createdAt == request.time;
       allow update: if false;
       allow delete: if isAdmin();

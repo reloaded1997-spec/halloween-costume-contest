@@ -10,6 +10,7 @@ import Leaderboard from '../components/admin/Leaderboard';
 import Ceremony from '../components/admin/Ceremony';
 import EntryModeration from '../components/admin/EntryModeration';
 import AnnouncementEditor from '../components/admin/AnnouncementEditor';
+import TvModeToggle from '../components/admin/TvModeToggle';
 
 type Session = { state: 'loading' } | { state: 'locked'; uid: string } | { state: 'admin' } | { state: 'error'; message: string };
 
@@ -106,6 +107,7 @@ function Dashboard() {
           <div className="space-y-4">
             <StageController config={config} status={status} now={now} />
             <AnnouncementEditor announcement={config.announcement} />
+            <TvModeToggle tvMode={config.tvMode} />
           </div>
         )}
         {tab === 'results' && <Leaderboard standings={standings} votes={votes} />}

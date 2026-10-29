@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Maximize, Megaphone, Minimize, Sparkles, Timer, Vote } from 'lucide-react';
 import { useContestConfig, useCostumes, useNow } from '../lib/hooks';
-import { effectiveStatus, formatCountdown, PLACE_META } from '../lib/contest';
+import { effectiveStatus, formatCountdown, PLACE_META, smallPhoto } from '../lib/contest';
 import { PumpkinMark } from '../components/ui';
 import type { ContestConfig, ContestStatus, Costume, Place } from '../types';
 
@@ -18,13 +18,14 @@ export default function TvView() {
   const now = useNow(1000);
   const status = effectiveStatus(config, now);
   const idle = useIdle(3000);
+  const lite = config.tvMode === 'lite';
 
   return (
-    <div className={`fixed inset-0 overflow-hidden bg-black font-sans text-white select-none ${idle ? 'cursor-none' : ''}`}>
+    <div className={`fixed inset-0 overflow-hidden bg-black font-sans text-white select-none ${idle ? 'cursor-none' : ''} ${lite ? 'tv-lite' : ''}`}>
       {status === 'VOTING_CLOSED' ? (
-        <CeremonyStage costumes={costumes} reveal={config.reveal} />
+        <CeremonyStage costumes={costumes} reveal={config.reveal} lite={lite} />
       ) : costumes.length > 0 ? (
-        <Slideshow costumes={costumes} loading={loading} />
+        <Slideshow costumes={costumes} loading={loading} lite={lite} />
       ) : (
         !loading && <EmptyStage status={status} announcement={config.announcement} />
       )}
@@ -46,7 +47,7 @@ export default function TvView() {
 
 /* ---------- Slideshow ---------- */
 
-function Slideshow({ costumes, loading }: { costumes: Costume[]; loading: boolean }) {
+function Slideshow({ costumes, loading, lite }: { costumes: Costume[]; loading: boolean; lite: boolean }) {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [previousId, setPreviousId] = useState<string | null>(null);
   const [currentIsFresh, setCurrentIsFresh] = useState(false);
@@ -119,32 +120,45 @@ function Slideshow({ costumes, loading }: { costumes: Costume[]; loading: boolea
     const ids = costumes.map((c) => c.id);
     const nextId = queue.current[0] ?? ids[(ids.indexOf(rotation.current ?? currentId ?? '') + 1) % ids.length];
     const next = costumes.find((c) => c.id === nextId);
-    if (next) new Image().src = next.photoUrl;
-  }, [costumes, currentId]);
+    if (next) new Image().src = lite ? smallPhoto(next) : next.photoUrl;
+  }, [costumes, currentId, lite]);
 
   const current = costumes.find((c) => c.id === currentId);
   const previous = costumes.find((c) => c.id === previousId);
 
   return (
     <div className="absolute inset-0">
-      {previous && previous.id !== current?.id && <Slide key={`prev-${previous.id}`} costume={previous} total={costumes.length} />}
-      {current && <Slide key={current.id} costume={current} total={costumes.length} animate isFresh={currentIsFresh} />}
+      {previous && previous.id !== current?.id && <Slide key={`prev-${previous.id}`} costume={previous} total={costumes.length} lite={lite} />}
+      {current && <Slide key={current.id} costume={current} total={costumes.length} lite={lite} animate isFresh={currentIsFresh} />}
     </div>
   );
 }
 
-function Slide({ costume, total, animate, isFresh }: { costume: Costume; total: number; animate?: boolean; isFresh?: boolean }) {
+function Slide({
+  costume,
+  total,
+  lite,
+  animate,
+  isFresh,
+}: {
+  costume: Costume;
+  total: number;
+  lite: boolean;
+  animate?: boolean;
+  isFresh?: boolean;
+}) {
+  const src = lite ? smallPhoto(costume) : costume.photoUrl;
   return (
     <div className={`absolute inset-0 flex bg-black ${animate ? 'z-10 animate-fade-in' : 'z-0'}`}>
       <div className="relative h-full w-[62%] overflow-hidden">
-        <img src={costume.photoUrl} alt="" aria-hidden="true" className="absolute inset-0 size-full scale-125 object-cover opacity-50 blur-3xl" />
-        <img src={costume.photoUrl} alt={costume.costumeTitle} className={`relative size-full object-contain ${animate ? 'animate-ken-burns' : ''}`} />
+        {!lite && <img src={src} alt="" aria-hidden="true" className="absolute inset-0 size-full scale-125 object-cover opacity-50 blur-3xl" />}
+        <img src={src} alt={costume.costumeTitle} className={`relative size-full object-contain ${animate && !lite ? 'animate-ken-burns' : ''}`} />
         <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-r from-transparent to-slate-950" />
       </div>
 
       <div className="relative flex w-[38%] flex-col justify-center bg-slate-950 pr-[4rem] pt-[12rem] pb-[11rem] pl-[2.5rem]">
-        <div aria-hidden="true" className="absolute -top-20 right-0 size-[22rem] rounded-full bg-violet-700/25 blur-3xl" />
-        <div aria-hidden="true" className="absolute bottom-0 -left-10 size-[18rem] rounded-full bg-orange-600/15 blur-3xl" />
+        <div aria-hidden="true" className="absolute -top-20 right-0 size-[22rem] rounded-full bg-violet-700/25 blur-3xl tv-fx" />
+        <div aria-hidden="true" className="absolute bottom-0 -left-10 size-[18rem] rounded-full bg-orange-600/15 blur-3xl tv-fx" />
 
         <div className="relative space-y-6">
           <div className="flex items-center gap-3">
@@ -284,8 +298,8 @@ function EmptyStage({ status, announcement }: { status: ContestStatus; announcem
   return (
     <div className="absolute inset-0 grid place-items-center bg-slate-950">
       <div aria-hidden="true" className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 size-[30rem] rounded-full bg-violet-700/25 blur-3xl" />
-        <div className="absolute right-1/4 bottom-1/4 size-[26rem] rounded-full bg-orange-600/20 blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 size-[30rem] rounded-full bg-violet-700/25 blur-3xl tv-fx" />
+        <div className="absolute right-1/4 bottom-1/4 size-[26rem] rounded-full bg-orange-600/20 blur-3xl tv-fx" />
       </div>
       <div className="relative flex items-center gap-[5rem]">
         <div className="space-y-6">
@@ -317,7 +331,7 @@ const PODIUM: { place: Place; height: string }[] = [
   { place: 'third', height: 'h-[54%]' },
 ];
 
-function CeremonyStage({ costumes, reveal }: { costumes: Costume[]; reveal: ContestConfig['reveal'] }) {
+function CeremonyStage({ costumes, reveal, lite }: { costumes: Costume[]; reveal: ContestConfig['reveal']; lite: boolean }) {
   const byId = new Map(costumes.map((c) => [c.id, c]));
   const anyRevealed = Object.values(reveal).some((id) => id && byId.has(id));
   const champion = reveal.first ? byId.get(reveal.first) : undefined;
@@ -325,8 +339,8 @@ function CeremonyStage({ costumes, reveal }: { costumes: Costume[]; reveal: Cont
   return (
     <div className="absolute inset-0 flex flex-col bg-slate-950">
       <div aria-hidden="true" className="absolute inset-0">
-        <div className="absolute -top-40 left-1/3 size-[40rem] rounded-full bg-violet-700/25 blur-3xl" />
-        <div className={`absolute bottom-0 left-1/2 size-[36rem] -translate-x-1/2 rounded-full blur-3xl transition-colors duration-1000 ${champion ? 'bg-amber-500/30' : 'bg-orange-700/15'}`} />
+        <div className="absolute -top-40 left-1/3 size-[40rem] rounded-full bg-violet-700/25 blur-3xl tv-fx" />
+        <div className={`absolute bottom-0 left-1/2 size-[36rem] -translate-x-1/2 rounded-full blur-3xl tv-fx transition-colors duration-1000 ${champion ? 'bg-amber-500/30' : 'bg-orange-700/15'}`} />
       </div>
 
       <div className="relative pt-[3.5rem] text-center">
@@ -346,7 +360,7 @@ function CeremonyStage({ costumes, reveal }: { costumes: Costume[]; reveal: Cont
               {costume ? (
                 <div key={costume.id} className={`flex h-full animate-reveal flex-col overflow-hidden rounded-3xl border-2 bg-slate-900 shadow-2xl ${place === 'first' ? 'border-amber-400 shadow-amber-500/30' : place === 'second' ? 'border-slate-300' : 'border-orange-700'}`}>
                   <div className="relative min-h-0 flex-1 bg-black">
-                    <img src={costume.photoUrl} alt={costume.costumeTitle} className="size-full object-cover" />
+                    <img src={lite ? smallPhoto(costume) : costume.photoUrl} alt={costume.costumeTitle} className="size-full object-cover" />
                     <span className={`absolute top-4 left-4 rounded-full px-4 py-1.5 font-display text-xl font-extrabold ${meta.chip}`}>{meta.label}</span>
                   </div>
                   <div className="space-y-1 p-5">
