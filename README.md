@@ -75,7 +75,7 @@ After deploying, your app is at `https://<project-id>.web.app`.
 | ------------------ | --------------------------------------------------------------------------------------------------- |
 | `costumes/{id}`    | `contestantName`, `costumeTitle`, `description`, `photoUrl`, `photoPath`, `thumbUrl`, `thumbPath` (960×540 copy), `createdAt` |
 | `votes/{voterId}`  | `voterId`, `firstPlaceId`, `secondPlaceId`, `thirdPlaceId`, `createdAt`                             |
-| `config/contest`   | `status` (`SUBMISSIONS_OPEN` \| `VOTING_OPEN` \| `VOTING_CLOSED`), `votingUnlockTime`, `votingLockTime`, `reveal`, `announcement`, `tvMode` (`full` \| `lite`) |
+| `config/contest`   | `status` (`SUBMISSIONS_OPEN` \| `VOTING_OPEN` \| `VOTING_CLOSED`), `votingUnlockTime`, `votingLockTime`, `reveal`, `announcement`, `tvMode` (`full` \| `lite`), `slideSeconds` (3–60) |
 | `admins/{uid}`     | Created when the host enters the correct PIN                                                        |
 | `adminConfig/secret` | `{ pin }`, unreadable by clients                                                                  |
 

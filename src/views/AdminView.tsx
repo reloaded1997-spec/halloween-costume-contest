@@ -107,7 +107,7 @@ function Dashboard() {
           <div className="space-y-4">
             <StageController config={config} status={status} now={now} />
             <AnnouncementEditor announcement={config.announcement} />
-            <TvModeToggle tvMode={config.tvMode} />
+            <TvModeToggle tvMode={config.tvMode} slideSeconds={config.slideSeconds} />
           </div>
         )}
         {tab === 'results' && <Leaderboard standings={standings} votes={votes} />}

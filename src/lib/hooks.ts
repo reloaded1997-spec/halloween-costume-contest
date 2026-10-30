@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, doc, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ANNOUNCEMENT_MAX, DEFAULT_CONFIG } from './contest';
+import { ANNOUNCEMENT_MAX, DEFAULT_CONFIG, SLIDE_SECONDS_MAX, SLIDE_SECONDS_MIN } from './contest';
 import type { ContestConfig, ContestStatus, Costume, Vote } from '../types';
 
 const STATUSES: ContestStatus[] = ['SUBMISSIONS_OPEN', 'VOTING_OPEN', 'VOTING_CLOSED'];
@@ -32,6 +32,10 @@ export function useContestConfig() {
             reveal: typeof data.reveal === 'object' && data.reveal ? data.reveal : {},
             announcement: typeof data.announcement === 'string' ? data.announcement.trim().slice(0, ANNOUNCEMENT_MAX) : '',
             tvMode: data.tvMode === 'lite' ? 'lite' : 'full',
+            slideSeconds:
+              typeof data.slideSeconds === 'number' && Number.isFinite(data.slideSeconds)
+                ? Math.min(SLIDE_SECONDS_MAX, Math.max(SLIDE_SECONDS_MIN, Math.round(data.slideSeconds)))
+                : DEFAULT_CONFIG.slideSeconds,
           });
           setLoading(false);
           setError(null);

@@ -6,7 +6,6 @@ import { effectiveStatus, formatCountdown, PLACE_META, smallPhoto } from '../lib
 import { PumpkinMark } from '../components/ui';
 import type { ContestConfig, ContestStatus, Costume, Place } from '../types';
 
-const SLIDE_MS = 9000;
 const FADE_MS = 1400;
 const GUEST_URL = (import.meta.env.VITE_PUBLIC_URL || window.location.origin).replace(/\/+$/, '') + '/';
 
@@ -25,7 +24,7 @@ export default function TvView() {
       {status === 'VOTING_CLOSED' ? (
         <CeremonyStage costumes={costumes} reveal={config.reveal} lite={lite} />
       ) : costumes.length > 0 ? (
-        <Slideshow costumes={costumes} loading={loading} lite={lite} />
+        <Slideshow costumes={costumes} loading={loading} lite={lite} slideMs={config.slideSeconds * 1000} />
       ) : (
         !loading && <EmptyStage status={status} announcement={config.announcement} />
       )}
@@ -47,7 +46,17 @@ export default function TvView() {
 
 /* ---------- Slideshow ---------- */
 
-function Slideshow({ costumes, loading, lite }: { costumes: Costume[]; loading: boolean; lite: boolean }) {
+function Slideshow({
+  costumes,
+  loading,
+  lite,
+  slideMs,
+}: {
+  costumes: Costume[];
+  loading: boolean;
+  lite: boolean;
+  slideMs: number;
+}) {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [previousId, setPreviousId] = useState<string | null>(null);
   const [currentIsFresh, setCurrentIsFresh] = useState(false);
@@ -107,13 +116,13 @@ function Slideshow({ costumes, loading, lite }: { costumes: Costume[]; loading: 
   advanceRef.current = advance;
   useEffect(() => {
     if (!currentId) return;
-    const timer = setTimeout(() => advanceRef.current(), SLIDE_MS);
+    const timer = setTimeout(() => advanceRef.current(), slideMs);
     const clearPrev = setTimeout(() => setPreviousId(null), FADE_MS + 100);
     return () => {
       clearTimeout(timer);
       clearTimeout(clearPrev);
     };
-  }, [currentId, idleTicks]);
+  }, [currentId, idleTicks, slideMs]);
 
   // Warm the cache for the upcoming photo so the cross-fade never shows a half-loaded image.
   useEffect(() => {
@@ -129,7 +138,7 @@ function Slideshow({ costumes, loading, lite }: { costumes: Costume[]; loading: 
   return (
     <div className="absolute inset-0">
       {previous && previous.id !== current?.id && <Slide key={`prev-${previous.id}`} costume={previous} total={costumes.length} lite={lite} />}
-      {current && <Slide key={current.id} costume={current} total={costumes.length} lite={lite} animate isFresh={currentIsFresh} />}
+      {current && <Slide key={current.id} costume={current} total={costumes.length} lite={lite} slideMs={slideMs} animate isFresh={currentIsFresh} />}
     </div>
   );
 }
@@ -138,12 +147,14 @@ function Slide({
   costume,
   total,
   lite,
+  slideMs,
   animate,
   isFresh,
 }: {
   costume: Costume;
   total: number;
   lite: boolean;
+  slideMs?: number;
   animate?: boolean;
   isFresh?: boolean;
 }) {
@@ -191,7 +202,8 @@ function Slide({
 
         {animate && (
           <div className="absolute right-[19rem] bottom-[2.5rem] left-[2.5rem] h-1 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full origin-left animate-slide-timer bg-gradient-to-r from-violet-500 to-orange-400" style={{ animationDuration: `${SLIDE_MS}ms` }} />
+            {/* Keyed on the pace so a mid-slide change restarts the bar along with the timer. */}
+            <div key={slideMs} className="h-full origin-left animate-slide-timer bg-gradient-to-r from-violet-500 to-orange-400" style={{ animationDuration: `${slideMs}ms` }} />
           </div>
         )}
       </div>

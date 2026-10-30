@@ -58,7 +58,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin()
         && (!('announcement' in request.resource.data) || text(request.resource.data.announcement, 0, 200))
-        && (!('tvMode' in request.resource.data) || request.resource.data.tvMode in ['full', 'lite']);
+        && (!('tvMode' in request.resource.data) || request.resource.data.tvMode in ['full', 'lite'])
+        && (!('slideSeconds' in request.resource.data)
+          || (request.resource.data.slideSeconds is int
+            && request.resource.data.slideSeconds >= 3 && request.resource.data.slideSeconds <= 60));
     }
 
     match /costumes/{costumeId} {

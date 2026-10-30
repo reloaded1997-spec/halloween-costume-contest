@@ -15,6 +15,8 @@ export interface ContestConfig {
   announcement: string;
   /** 'lite' drops the TV's zoom/blur effects and shows the small photo copies, for slow TV browsers. */
   tvMode: TvMode;
+  /** How long each TV slide stays up, in seconds (SLIDE_SECONDS_MIN–SLIDE_SECONDS_MAX). */
+  slideSeconds: number;
 }
 
 export type TvMode = 'full' | 'lite';

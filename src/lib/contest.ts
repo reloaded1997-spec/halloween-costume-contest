@@ -7,7 +7,11 @@ export const DEFAULT_CONFIG: ContestConfig = {
   reveal: {},
   announcement: '',
   tvMode: 'full',
+  slideSeconds: 9,
 };
+
+export const SLIDE_SECONDS_MIN = 3;
+export const SLIDE_SECONDS_MAX = 60;
 
 /** The small copy when there is one (older entries only have the full photo). */
 export const smallPhoto = (c: Costume) => c.thumbUrl || c.photoUrl;
